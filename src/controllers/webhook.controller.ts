@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
 import { Plan } from "../types/plan";
+import { paymentClient } from "../config/mercadopago";
 
 const prisma = new PrismaClient();
 
@@ -10,12 +11,20 @@ export const handleWebhook = async (req: Request, res: Response) => {
 
         if (type === "payment") {
             const paymentId = data.id;
-            console.log("📩 Pago recibido:", paymentId);
+            console.log("📩 Pago recibido, consultando detalles:", paymentId);
 
-            // ⚡ Lo ideal es consultar Mercado Pago con paymentId para validar
-            const externalReference = data.external_reference;
+            // Consultar el pago en Mercado Pago
+            const payment = await paymentClient.get({ id: paymentId });
+
+            if (payment.status !== "approved") {
+                console.log("⚠️ Pago no aprobado, ignorando");
+                return res.sendStatus(200);
+            }
+
+            // Obtener external_reference
+            const externalReference = payment.external_reference;
             if (!externalReference) {
-                return res.status(400).json({ error: "Falta external_reference" });
+                return res.status(400).json({ error: "Falta external_reference en el pago" });
             }
 
             const { userId, plan } = JSON.parse(externalReference) as {
