@@ -3,6 +3,12 @@ import { preferenceClient } from "../config/mercadopago";
 import { Plan } from "../types/plan";
 import { ENV } from "../config/env";
 
+import { Payment, MercadoPagoConfig } from "mercadopago";
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
+const mpClient = new MercadoPagoConfig({ accessToken: ENV.MP_ACCESS_TOKEN! });
+
 export const createPreference = async (req: Request, res: Response) => {
     try {
         const { userId, plan } = req.body as { userId: number; plan: Plan };
@@ -31,5 +37,63 @@ export const createPreference = async (req: Request, res: Response) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: "Error al crear preferencia" });
+    }
+};
+
+/**
+ * Checkout con tarjeta (Checkout API)
+ */
+export const checkoutPayment = async (req: Request, res: Response) => {
+    try {
+        const { token, userId, plan } = req.body as {
+            token: string;
+            userId: number;
+            plan: "free" | "premium";
+        };
+
+        if (!token || !userId || !plan) {
+            return res.status(400).json({ error: "Faltan datos en la solicitud" });
+        }
+
+        const payment = new Payment(mpClient);
+
+        const response = await payment.create({
+            body: {
+                transaction_amount: plan === "premium" ? 10 : 0, // monto en PEN
+                token,
+                description: `Suscripción ${plan}`,
+                installments: 1,
+                payment_method_id: "visa", // 👈 O dinámico si envías desde frontend
+                payer: {
+                    email: "test@test.com", // ⚡ Mejor usa el email real del user
+                },
+            },
+        });
+
+        if (response.status === "approved") {
+            // 🔥 Actualizar tokens del usuario
+            await prisma.user.update({
+                where: { id: userId },
+                data: {
+                    plan,
+                    tokensRemaining: plan === "premium" ? 1000 : 100,
+                },
+            });
+
+            return res.json({
+                success: true,
+                message: "Pago aprobado ✅",
+                payment: response,
+            });
+        }
+
+        res.json({
+            success: false,
+            message: "Pago pendiente o rechazado ❌",
+            payment: response,
+        });
+    } catch (error) {
+        console.error("❌ Error en checkout:", error);
+        res.status(500).json({ error: "Error procesando el pago" });
     }
 };
