@@ -45,8 +45,11 @@ export const createPreference = async (req: Request, res: Response) => {
  */
 export const checkoutPayment = async (req: Request, res: Response) => {
     try {
-        const { token, userId, plan } = req.body as {
+        const { token, payment_method_id, issuer_id, installments, userId, plan } = req.body as {
             token: string;
+            payment_method_id: string;
+            issuer_id: number;
+            installments: number;
             userId: number;
             plan: "free" | "premium";
         };
@@ -64,8 +67,8 @@ export const checkoutPayment = async (req: Request, res: Response) => {
                 description: `Suscripción ${plan}`,
                 installments,
                 payment_method_id,  // 👈 dinámico
-                //issuer_id,          // 👈 opcional, si lo envía el frontend
-                payer: { email: "test_user_123456@testuser.com" },
+                issuer_id,          // 👈 opcional, si lo envía el frontend
+                payer: { email: "test_user_7870738702899780648@testuser.com" },
             },
         });
 
