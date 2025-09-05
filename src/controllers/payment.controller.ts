@@ -62,11 +62,10 @@ export const checkoutPayment = async (req: Request, res: Response) => {
                 transaction_amount: plan === "premium" ? 10 : 0, // monto en PEN
                 token,
                 description: `Suscripción ${plan}`,
-                installments: 1,
-                payment_method_id: "visa", // 👈 O dinámico si envías desde frontend
-                payer: {
-                    email: "test@test.com", // ⚡ Mejor usa el email real del user
-                },
+                installments,
+                payment_method_id,  // 👈 dinámico
+                issuer_id,          // 👈 opcional, si lo envía el frontend
+                payer: { email: "test_user_123456@testuser.com" },
             },
         });
 
