@@ -5,6 +5,7 @@ import { ENV } from "../config/env";
 
 import { Payment, MercadoPagoConfig } from "mercadopago";
 import { PrismaClient } from "@prisma/client";
+import { PayerRequest } from "mercadopago/dist/clients/payment/create/types";
 
 const prisma = new PrismaClient();
 const mpClient = new MercadoPagoConfig({ accessToken: ENV.MP_ACCESS_TOKEN! });
@@ -45,13 +46,14 @@ export const createPreference = async (req: Request, res: Response) => {
  */
 export const checkoutPayment = async (req: Request, res: Response) => {
     try {
-        const { token, payment_method_id, issuer_id, installments, userId, plan } = req.body as {
+        const { token, payment_method_id, issuer_id, installments, userId, plan, payer } = req.body as {
             token: string;
             payment_method_id: string;
             issuer_id: number;
             installments: number;
             userId: number;
             plan: "free" | "premium";
+            payer: PayerRequest;
         };
 
         if (!token || !userId || !plan) {
@@ -64,6 +66,7 @@ export const checkoutPayment = async (req: Request, res: Response) => {
             installments,
             userId,
             plan,
+            payer,
         });
         const payment = new Payment(mpClient);
 
@@ -75,7 +78,7 @@ export const checkoutPayment = async (req: Request, res: Response) => {
                 installments,
                 payment_method_id,  // 👈 dinámico
                 issuer_id,          // 👈 opcional, si lo envía el frontend
-                payer: { email: "test_user_7870738702899780648@testuser.com" },
+                payer,
             },
         });
         console.log("✅ Respuesta MP:", response);
