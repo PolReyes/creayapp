@@ -57,7 +57,14 @@ export const checkoutPayment = async (req: Request, res: Response) => {
         if (!token || !userId || !plan) {
             return res.status(400).json({ error: "Faltan datos en la solicitud" });
         }
-
+        console.log("📩 Datos recibidos en backend:", {
+            token,
+            payment_method_id,
+            issuer_id,
+            installments,
+            userId,
+            plan,
+        });
         const payment = new Payment(mpClient);
 
         const response = await payment.create({
@@ -71,7 +78,7 @@ export const checkoutPayment = async (req: Request, res: Response) => {
                 payer: { email: "test_user_7870738702899780648@testuser.com" },
             },
         });
-
+        console.log("✅ Respuesta MP:", response);
         if (response.status === "approved") {
             // 🔥 Actualizar tokens del usuario
             await prisma.user.update({
@@ -94,8 +101,8 @@ export const checkoutPayment = async (req: Request, res: Response) => {
             message: "Pago pendiente o rechazado ❌",
             payment: response,
         });
-    } catch (error) {
+    } catch (error: any) {
         console.error("❌ Error en checkout:", error);
-        res.status(500).json({ error: "Error procesando el pago" });
+        return res.status(500).json({ error: error.message, details: error });
     }
 };
