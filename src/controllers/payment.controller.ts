@@ -64,7 +64,7 @@ export const checkoutPayment = async (req: Request, res: Response) => {
                 description: `Suscripción ${plan}`,
                 installments,
                 payment_method_id,  // 👈 dinámico
-                issuer_id,          // 👈 opcional, si lo envía el frontend
+                //issuer_id,          // 👈 opcional, si lo envía el frontend
                 payer: { email: "test_user_123456@testuser.com" },
             },
         });
